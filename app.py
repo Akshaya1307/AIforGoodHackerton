@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 
 # ----------------------------
 # Page Configuration
@@ -91,18 +90,15 @@ else:
     st.success("✅ Low risk. Supply is currently sufficient.")
 
 # ----------------------------
-# Visualization
+# Visualization (Streamlit Native)
 # ----------------------------
 st.subheader("📈 Demand vs Supply Comparison")
 
-fig, ax = plt.subplots()
-ax.bar(
-    ["Demand", "Supply"],
-    [filtered["Demand"].values[0], filtered["Supply"].values[0]]
-)
-ax.set_ylabel("Quantity")
-ax.set_title("Demand vs Supply")
-st.pyplot(fig)
+chart_data = pd.DataFrame({
+    "Quantity": [filtered["Demand"].values[0], filtered["Supply"].values[0]]
+}, index=["Demand", "Supply"])
+
+st.bar_chart(chart_data)
 
 # ----------------------------
 # AI Explanation (WHY Section)
@@ -111,29 +107,20 @@ def explain_risk(demand, supply):
     gap = demand - supply
 
     if gap > 40:
-        return (
-            "Supply is significantly lower than demand, indicating a severe shortage risk. "
-            "Immediate redistribution or replenishment is recommended."
-        )
+        return "Supply is significantly lower than demand, indicating a severe shortage risk."
     elif gap > 20:
-        return (
-            "Supply is moderately below demand, suggesting potential distribution or logistics issues."
-        )
+        return "Supply is moderately below demand, suggesting potential distribution issues."
     elif gap > 0:
-        return (
-            "Supply is slightly below demand. Minor fluctuations may lead to short-term shortages."
-        )
+        return "Supply is slightly below demand. Minor fluctuations may cause shortages."
     else:
-        return (
-            "Supply meets or exceeds demand. No immediate shortage risk detected."
-        )
+        return "Supply meets or exceeds demand. No immediate shortage detected."
 
 st.subheader("🧠 Why this risk? (AI Explanation)")
 
-demand_val = filtered["Demand"].values[0]
-supply_val = filtered["Supply"].values[0]
-
-st.info(explain_risk(demand_val, supply_val))
+st.info(explain_risk(
+    filtered["Demand"].values[0],
+    filtered["Supply"].values[0]
+))
 
 # ----------------------------
 # Snowflake Architecture Note
@@ -142,8 +129,8 @@ st.markdown("---")
 st.markdown(
     """
     **Snowflake Architecture Note:**  
-    In a production deployment, this application would run natively inside Snowflake using Streamlit.  
-    Inventory data would reside in Snowflake tables, while AI-driven risk detection and explanations
-    would be powered by Snowflake Intelligence (Cortex / AI SQL).
+    In production, this Streamlit application would run natively inside Snowflake.  
+    Inventory data would reside in Snowflake tables, while AI-driven risk detection
+    and explanations would be powered by Snowflake Intelligence (Cortex / AI SQL).
     """
 )
