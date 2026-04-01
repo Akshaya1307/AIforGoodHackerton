@@ -62,20 +62,19 @@ filtered = df[
 ]
 
 # ----------------------------
-# ✅ SAFETY CHECK - Handle empty data
+# ✅ SAFETY CHECK
 # ----------------------------
 if filtered.empty:
-    st.error("❌ No data available for the selected filters. Please try different parameters.")
+    st.error("❌ No data available for the selected filters.")
     st.stop()
 
 # ----------------------------
-# ✅ FIXED KPI Metrics (Extract single values properly)
+# ✅ FIXED KPI Metrics
 # ----------------------------
 st.subheader("📊 Key Metrics")
 
 col1, col2, col3 = st.columns(3)
 
-# Extract single values from DataFrame
 demand_val = int(filtered["Demand"].values[0])
 supply_val = int(filtered["Supply"].values[0])
 risk_val = filtered["Risk"].values[0]
@@ -87,179 +86,74 @@ with col2:
     st.metric("Supply", supply_val)
 
 with col3:
-    # ✅ Add color coding for risk levels
     if risk_val == "High":
-        st.metric("Risk Level", risk_val, delta="⚠️ CRITICAL", delta_color="inverse")
+        st.metric("Risk Level", risk_val, delta="⚠️ CRITICAL")
     elif risk_val == "Medium":
-        st.metric("Risk Level", risk_val, delta="⚡ Monitor", delta_color="off")
+        st.metric("Risk Level", risk_val, delta="⚡ Monitor")
     else:
-        st.metric("Risk Level", risk_val, delta="✅ Stable", delta_color="normal")
+        st.metric("Risk Level", risk_val, delta="✅ Stable")
 
 # ----------------------------
-# Risk Alert Message with enhanced styling
+# Risk Alert Message
 # ----------------------------
 if risk_val == "High":
-    st.error("🚨 **HIGH RISK** – Stock-out detected. Immediate intervention required.")
-    st.warning("📢 Suggested Action: Increase supply by 20-30% immediately.")
+    st.error("🚨 High risk of stock-out detected. Immediate intervention required.")
 elif risk_val == "Medium":
-    st.warning("⚠️ **MEDIUM RISK** – Supply levels should be monitored closely.")
-    st.info("📊 Suggested Action: Review supply chain and optimize distribution.")
+    st.warning("⚠️ Medium risk. Supply levels should be monitored closely.")
 else:
-    st.success("✅ **LOW RISK** – Supply is currently sufficient.")
-    st.info("📈 Suggested Action: Maintain current inventory levels.")
+    st.success("✅ Low risk. Supply is currently sufficient.")
 
 # ----------------------------
-# ✅ FIXED Visualization (Extract values properly)
+# ✅ FIXED Visualization
 # ----------------------------
 st.subheader("📈 Demand vs Supply Comparison")
 
-# Create chart data with proper values
 chart_data = pd.DataFrame({
     "Quantity": [demand_val, supply_val]
 }, index=["Demand", "Supply"])
 
-# Display bar chart
 st.bar_chart(chart_data)
 
-# Add additional metrics visualization
-col4, col5 = st.columns(2)
-
-with col4:
-    gap = demand_val - supply_val
-    gap_percentage = (gap / demand_val) * 100 if demand_val > 0 else 0
-    
-    st.metric(
-        "Supply-Demand Gap", 
-        f"{gap} units",
-        delta=f"{gap_percentage:.1f}% short" if gap > 0 else "Surplus",
-        delta_color="inverse" if gap > 0 else "normal"
-    )
-
-with col5:
-    coverage = (supply_val / demand_val) * 100 if demand_val > 0 else 0
-    st.metric(
-        "Supply Coverage", 
-        f"{coverage:.1f}%",
-        delta="Adequate" if coverage >= 100 else "Insufficient",
-        delta_color="normal" if coverage >= 100 else "inverse"
-    )
-
 # ----------------------------
-# Enhanced AI Explanation (WHY Section)
+# AI Explanation
 # ----------------------------
-def explain_risk(demand, supply, risk_level):
+def explain_risk(demand, supply):
     gap = demand - supply
-    
-    # Detailed explanation based on multiple factors
-    if risk_level == "High":
-        if gap > 40:
-            return f"""
-            🔴 **CRITICAL SHORTAGE DETECTED**
-            
-            • **Supply Gap:** {gap} units ({(gap/demand*100):.1f}% of demand)
-            • **Root Cause:** Supply is significantly lower than demand
-            • **Impact:** Immediate stock-out risk in {gap//7:.0f} days at current consumption rate
-            • **Recommendation:** Emergency procurement required. Increase supply by 30% immediately.
-            """
-        else:
-            return f"""
-            🟠 **SEVERE SUPPLY CONSTRAINT**
-            
-            • **Supply Gap:** {gap} units ({(gap/demand*100):.1f}% shortfall)
-            • **Root Cause:** Supply chain bottleneck or unexpected demand surge
-            • **Impact:** Critical items may run out within 2-3 days
-            • **Recommendation:** Expedite shipments and activate backup suppliers
-            """
-    
-    elif risk_level == "Medium":
-        if gap > 20:
-            return f"""
-            🟡 **MODERATE SHORTAGE RISK**
-            
-            • **Supply Gap:** {gap} units ({(gap/demand*100):.1f}% shortfall)
-            • **Root Cause:** Supply moderately below demand due to distribution inefficiencies
-            • **Impact:** Potential shortages if demand continues at current pace
-            • **Recommendation:** Monitor daily and adjust orders for next cycle
-            """
-        else:
-            return f"""
-            🟡 **BALANCE CONCERN**
-            
-            • **Supply Gap:** {gap} units ({(gap/demand*100):.1f}% shortfall)
-            • **Root Cause:** Minor supply-demand imbalance
-            • **Impact:** Possible stock-out only if demand spikes
-            • **Recommendation:** Maintain current levels but increase safety stock by 10%
-            """
-    
-    else:  # Low risk
-        if gap <= 0:
-            return f"""
-            🟢 **HEALTHY INVENTORY LEVELS**
-            
-            • **Supply Status:** Supply meets or exceeds demand ({(supply/demand*100):.1f}% coverage)
-            • **Root Cause:** Well-balanced supply chain with adequate buffer stock
-            • **Impact:** No immediate shortage concerns
-            • **Recommendation:** Maintain current inventory strategy
-            """
-        else:
-            return f"""
-            🟢 **MINOR FLUCTUATION DETECTED**
-            
-            • **Supply Gap:** {gap} units ({(gap/demand*100):.1f}% shortfall)
-            • **Root Cause:** Normal market fluctuations
-            • **Impact:** No immediate action needed
-            • **Recommendation:** Continue regular monitoring
-            """
+
+    if gap > 40:
+        return "Supply is significantly lower than demand, indicating a severe shortage risk."
+    elif gap > 20:
+        return "Supply is moderately below demand, suggesting potential distribution issues."
+    elif gap > 0:
+        return "Supply is slightly below demand. Minor fluctuations may cause shortages."
+    else:
+        return "Supply meets or exceeds demand. No immediate shortage detected."
 
 st.subheader("🧠 Why this risk? (AI Explanation)")
 
-# Display the enhanced explanation
-explanation = explain_risk(demand_val, supply_val, risk_val)
-st.info(explanation)
+st.info(explain_risk(demand_val, supply_val))
 
 # ----------------------------
-# Additional Data Table (Optional)
+# ✅ FIXED Data Table (No styling issues)
 # ----------------------------
 with st.expander("📋 View Detailed Data Table"):
-    st.dataframe(
-        filtered.style.applymap(
-            lambda x: 'background-color: #ff6b6b' if x == 'High' 
-            else 'background-color: #ffd93d' if x == 'Medium' 
-            else 'background-color: #6bcf7f' if x == 'Low' 
-            else '',
-            subset=['Risk']
-        ),
-        use_container_width=True
-    )
-
-# ----------------------------
-# Regional Comparison
-# ----------------------------
-st.subheader("🌍 Regional Comparison")
-
-# Show comparison across regions for selected item
-region_comparison = df[df["Item"] == selected_item].copy()
-region_comparison["Gap"] = region_comparison["Demand"] - region_comparison["Supply"]
-
-col6, col7 = st.columns(2)
-
-with col6:
-    st.bar_chart(
-        region_comparison.set_index("Region")[["Demand", "Supply"]],
-        use_container_width=True
-    )
-
-with col7:
-    # Show risk distribution
-    risk_dist = region_comparison["Risk"].value_counts()
-    st.write("**Risk Distribution Across Regions**")
-    for risk_type, count in risk_dist.items():
-        if risk_type == "High":
-            st.error(f"{risk_type}: {count} region(s)")
-        elif risk_type == "Medium":
-            st.warning(f"{risk_type}: {count} region(s)")
-        else:
-            st.success(f"{risk_type}: {count} region(s)")
+    # Simple dataframe - guaranteed to work
+    st.dataframe(filtered, use_container_width=True)
+    
+    # Optional: Safe risk breakdown using columns
+    st.markdown("**Risk Summary:**")
+    risk_counts = filtered["Risk"].value_counts()
+    
+    r1, r2, r3 = st.columns(3)
+    with r1:
+        if "High" in risk_counts:
+            st.error(f"🔴 High: {risk_counts['High']}")
+    with r2:
+        if "Medium" in risk_counts:
+            st.warning(f"🟠 Medium: {risk_counts['Medium']}")
+    with r3:
+        if "Low" in risk_counts:
+            st.success(f"🟢 Low: {risk_counts['Low']}")
 
 # ----------------------------
 # Snowflake Architecture Note
@@ -267,21 +161,9 @@ with col7:
 st.markdown("---")
 st.markdown(
     """
-    ### ❄️ **Snowflake Architecture Note**
-    
-    In production, this Streamlit application would run natively inside Snowflake:
-    
-    - **Data Layer:** Inventory data resides in Snowflake tables with real-time updates
-    - **AI Layer:** Risk detection powered by Snowflake Cortex / AI SQL functions
-    - **Explanation Layer:** Natural language insights generated using LLM models
-    - **Scale:** Handles millions of SKUs across thousands of locations
-    
-    **Next Steps:** Connect to Snowflake, replace synthetic data with real tables, 
-    and deploy as a Snowflake Native App.
+    **Snowflake Architecture Note:**  
+    In production, this Streamlit application would run natively inside Snowflake.  
+    Inventory data would reside in Snowflake tables, while AI-driven risk detection
+    and explanations would be powered by Snowflake Intelligence (Cortex / AI SQL).
     """
 )
-
-# ----------------------------
-# Footer with timestamp
-# ----------------------------
-st.caption(f"🔄 Last updated: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')} | AI for Good Initiative")
